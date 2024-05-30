@@ -1,18 +1,30 @@
-# Import necessary libraries
-from flask import Flask, request, render_template, send_file
-from flask_ngrok import run_with_ngrok
+import tkinter as tk
+from tkinter import filedialog
 import joblib
 import os
 import pandas as pd
-from werkzeug.utils import secure_filename
 
-# Initialize Flask application
-app = Flask(__name__)
+# Initialize Tkinter application
+root = tk.Tk()
+root.title("Machine Learning Pipeline")
 
 # Directory where models are saved
 model_dir = 'saved_models'
-upload_folder = 'uploads'
-os.makedirs(upload_folder, exist_ok=True)
+
+model_name_mapping = {
+    "Logistic Regression": "lr_model",
+    "Decision Tree": "dt_model",
+    "Random Forest": "rf_model",
+    "Gradient Boosting": "gb_model",
+    "XGBoost": "xgb_model",
+    "LightGBM": "lgb_model",
+    "K-Nearest Neighbors": "knn_model",
+    "Support Vector Machine": "svm_model",
+    "Naive Bayes": "nb_model",
+    "AdaBoost": "ada_model",
+    "MLP": "mlp_model",
+    "Stacking": "stack_model"
+}
 
 # Function to load a model pipeline
 def load_model(model_name):
@@ -22,49 +34,65 @@ def load_model(model_name):
     else:
         raise ValueError(f"Model {model_name} is not recognized or does not exist.")
 
-# Home route to render the HTML form
-@app.route('/')
-def home():
-    return render_template('index.html')
+# Function to handle file upload
+def upload_file():
+    filename = filedialog.askopenfilename(initialdir="/", title="Select file", filetypes=(("CSV files", "*.csv"), ("All files", "*.*")))
+    entry_path.delete(0, tk.END)
+    entry_path.insert(0, filename)
 
-# Predict route to handle file upload and return predictions
-@app.route('/predict', methods=['POST'])
+# Function to handle prediction
 def predict():
-    if 'file' not in request.files:
-        return "No file part"
-    
-    file = request.files['file']
-    
-    if file.filename == '':
-        return "No selected file"
-    
-    if file:
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(upload_folder, filename)
-        file.save(file_path)
-        
-        data = pd.read_csv(file_path)
-        
-        # Drop columns named 'id' or 'class' if they exist
-        if 'id' in data.columns:
-            data = data.drop(columns=['id'])
-        if 'class' in data.columns:
-            data = data.drop(columns=['class'])
-        
-        model_name = request.form['model']
-        model = load_model(model_name)
-        
-        predictions = model.predict(data)
-        data['Predictions'] = predictions
-        
-        output_path = os.path.join(upload_folder, 'predictions.csv')
-        data.to_csv(output_path, index=False)
-        
-        return send_file(output_path, as_attachment=True)
+    filepath = entry_path.get()
+    if not filepath:
+        label_result.config(text="No file selected", fg="red")
+        return
 
-# Running the Flask app
-if __name__ == '__main__':
-    app.run(debug=True)
+    if not os.path.exists(filepath):
+        label_result.config(text="File does not exist", fg="red")
+        return
 
+    data = pd.read_csv(filepath)
 
+    user_friendly_model_name = variable_model.get()
+    model_name = model_name_mapping.get(user_friendly_model_name)
 
+    pipeline = load_model(model_name)
+
+    predictions = pipeline.predict(data)
+    data['Predictions'] = predictions
+
+    # Extract filename without extension
+    file_name = os.path.splitext(os.path.basename(filepath))[0]
+    output_path = f"{file_name}_{model_name}.csv"
+
+    data.to_csv(output_path, index=False)
+
+    label_result.config(text=f"Predictions saved to {output_path}", fg="green")
+
+# Create components
+label_file = tk.Label(root, text="Select CSV File:")
+label_file.grid(row=0, column=0, padx=10, pady=10)
+
+entry_path = tk.Entry(root, width=50)
+entry_path.grid(row=0, column=1, padx=10, pady=10)
+
+button_browse = tk.Button(root, text="Browse", command=upload_file)
+button_browse.grid(row=0, column=2, padx=10, pady=10)
+
+label_model = tk.Label(root, text="Select Model:")
+label_model.grid(row=1, column=0, padx=10, pady=10)
+
+model_names = list(model_name_mapping.keys())
+variable_model = tk.StringVar(root)
+variable_model.set(model_names[0])
+option_model = tk.OptionMenu(root, variable_model, *model_names)
+option_model.grid(row=1, column=1, padx=10, pady=10)
+
+button_predict = tk.Button(root, text="Predict", command=predict)
+button_predict.grid(row=1, column=2, padx=10, pady=10)
+
+label_result = tk.Label(root, text="", fg="green")
+label_result.grid(row=2, column=0, columnspan=3, padx=10, pady=10)
+
+# Run the Tkinter application
+root.mainloop()
