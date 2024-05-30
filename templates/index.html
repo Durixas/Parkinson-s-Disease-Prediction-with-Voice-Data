@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Prediction</title>
+</head>
+
+<body>
+    <h1>Data Pipeline</h1>
+    <form action="/predict" method="post" enctype="multipart/form-data">
+        <label for="model">Select Model:</label>
+        <select name="model" id="model">
+            <option value="lr_model">Logistic Regression</option>
+            <option value="dt_model">Decision Tree</option>
+            <option value="rf_model">Random Forest</option>
+            <option value="gb_model">Gradient Boosting</option>
+            <option value="xgb_model">XGBoost</option>
+            <option value="lgb_model">LightGBM</option>
+            <option value="knn_model">K-Nearest Neighbors</option>
+            <option value="svm_model">Support Vector Machine</option>
+            <option value="nb_model">Naive Bayes</option>
+            <option value="ada_model">AdaBoost</option>
+            <option value="mlp_model">MLP</option>
+            <option value="stack_model">Stacking Model</option>
+        </select><br><br>
+
+        <label for="file">Upload CSV File:</label>
+        <input type="file" id="file" name="file"><br><br>
+
+        <input type="submit" value="Predict">
+    </form>
+</body>
+
+</html>
